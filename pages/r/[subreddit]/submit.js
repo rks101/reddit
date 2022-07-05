@@ -9,6 +9,9 @@ export default function NewPost({ subreddit }) {
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [image, setImage] = useState(null)
+  const [imageURL, setImageURL] = useState(null)
+
   const { data: session, status } = useSession()
   const loading = status === 'loading'
 
@@ -21,7 +24,7 @@ export default function NewPost({ subreddit }) {
 
   if (!subreddit)
     return <p className='text-center p-5'>Subreddit does not exist 😞</p>
-
+  
   return (
     <>
       <header className='bg-black text-white h-12 flex pt-3 px-5 pb-2'>
@@ -47,11 +50,11 @@ export default function NewPost({ subreddit }) {
                 alert('Enter a title')
                 return
               }
-              if (!content) {
+              if (!content && !image) {
                 alert('Enter some text in the post')
                 return
               }
-              const res = await fetch('/api/post', {
+              /*const res = await fetch('/api/post', {
                 body: JSON.stringify({
                   title,
                   content,
@@ -60,6 +63,17 @@ export default function NewPost({ subreddit }) {
                 headers: {
                   'Content-Type': 'application/json',
                 },
+                method: 'POST',
+              })*/
+
+              const body = new FormData()
+              body.append('image', image)
+              body.append('title', title)
+              body.append('content', content)
+              body.append('subreddit_name', subreddit.name)
+            
+              const res = await fetch('/api/post', {
+                body,
                 method: 'POST',
               })
               router.push(`/r/${subreddit.name}`)
@@ -73,6 +87,30 @@ export default function NewPost({ subreddit }) {
                  placeholder='The post title'
               onChange={(e) => setTitle(e.target.value)}
             />
+
+            <div className='text-sm text-gray-600 '>
+              <label className='relative font-medium cursor-pointer underline my-3 block'>
+                {!imageURL && <p className=''>Upload an image</p>}
+                <img src={imageURL} />
+                <input
+                  name='image'
+                  type='file'
+                  accept='image/*'
+                  className='hidden'
+                  onChange={(event) => {
+                    if (event.target.files && event.target.files[0]) {
+                      if (event.target.files[0].size > 3072000) {
+                        alert('Maximum size allowed is 3MB')
+                        return false
+                      }
+                      setImage(event.target.files[0])
+                      setImageURL(URL.createObjectURL(event.target.files[0]))
+                    }
+                  }}
+                />
+              </label>
+            </div>
+
             <textarea
               className='border border-gray-700 p-4 w-full text-lg font-medium bg-transparent outline-none  '
               rows={5}
